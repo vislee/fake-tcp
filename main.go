@@ -27,7 +27,7 @@ func main() {
 	psh := flag.String("psh", "", "push data")
 
 	seqn := flag.Uint("seqn", 1, "sequence number")
-	ackn := flag.Uint("ackn", 2, "acknwledgment number")
+	ackn := flag.Uint("ackn", 2, "acknowledgment number")
 
 	flag.Parse()
 

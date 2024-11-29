@@ -9,7 +9,7 @@ Usage of ./feign-tcp:
   -ack
     	ack flag
   -ackn uint
-    	acknwledgment number (default 2)
+    	acknowledgment number (default 2)
   -dstAddr string
     	dst addr (default "127.0.0.1")
   -dstPort int
