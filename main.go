@@ -65,6 +65,12 @@ func main() {
 	}
 	defer syscall.Close(fd)
 
+	// 绑定网口
+	err = bindToDeviceFunc(fd)
+	if err != nil {
+		log.Fatalf("BindToDevice failed: %v", err)
+	}
+
 	// 设置套接字选项，以便我们可以自己构造 IP 头部
 	err = syscall.SetsockoptInt(fd, syscall.IPPROTO_IP, syscall.IP_HDRINCL, 1)
 	if err != nil {
