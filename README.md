@@ -4,30 +4,30 @@ forging TCP tests tcp protocol features
 # use
 
 ```
-feign-tcp -h
-Usage of ./feign-tcp:
+$ feign-tcp -h
+Usage of feign-tcp:
   -ack
-    	ack flag
+      ack flag
   -ackn uint
-    	acknowledgment number (default 2)
+      acknowledgment number (default 1)
   -dstAddr string
-    	dst addr (default "127.0.0.1")
+      dst addr (default "127.0.0.1")
   -dstPort int
-    	dst port (default 80)
+      dst port (default 80)
   -fin
-    	fin flag
+      fin flag
   -psh string
-    	push data
+      push data
   -rst
-    	rst flag
+      rst flag
   -seqn uint
-    	sequence number (default 1)
+      sequence number (default 1)
   -srcAddr string
-    	src addr (default "127.0.0.1")
+      src addr (default "127.0.0.1")
   -srcPort int
-    	src port (default 12345)
+      src port (default 12345)
   -syn
-    	syn flag (default true)
+      syn flag (default true)
 ```
 
 # disclaimer(免责声明)

@@ -3,10 +3,11 @@ package main
 import (
 	"encoding/binary"
 	"flag"
-	"golang.org/x/net/ipv4"
 	"log"
 	"net"
 	"syscall"
+
+	"golang.org/x/net/ipv4"
 )
 
 func main() {
@@ -27,7 +28,9 @@ func main() {
 	psh := flag.String("psh", "", "push data")
 
 	seqn := flag.Uint("seqn", 1, "sequence number")
-	ackn := flag.Uint("ackn", 2, "acknowledgment number")
+	ackn := flag.Uint("ackn", 1, "acknowledgment number")
+
+	ipId := flag.Int("ipID", 0, "ipv4 identification")
 
 	flag.Parse()
 
@@ -39,17 +42,19 @@ func main() {
 	if *syn {
 		flags |= 0x02
 	}
-	if *ack {
+	if *ack || *ackn > 1 {
 		flags |= 0x10
 	}
 	if *fin {
-		flags = 0x01
+		flags |= 0x01
 	}
 	if *rst {
-		flags = 0x04
+		flags |= 0x04
 	}
-	dataSize := len(*psh)
-	if dataSize > 0 {
+
+	payload := []byte(*psh)
+	payloadSize := len(payload)
+	if payloadSize > 0 {
 		flags |= 0x08
 	}
 
@@ -63,14 +68,16 @@ func main() {
 	// 设置套接字选项，以便我们可以自己构造 IP 头部
 	err = syscall.SetsockoptInt(fd, syscall.IPPROTO_IP, syscall.IP_HDRINCL, 1)
 	if err != nil {
-		log.Fatal("SetsockoptInt: ", err)
+		log.Fatalf("SetsockoptInt failed: %v", err)
 	}
 
 	// 构造IP头
 	ipHeader := &ipv4.Header{
 		Version:  4,
 		Len:      20,
-		TotalLen: 40 + dataSize,
+		TotalLen: 40 + payloadSize,
+		ID:       *ipId,
+		Flags:    ipv4.DontFragment,
 		TTL:      64,
 		Protocol: syscall.IPPROTO_TCP,
 		Src:      srcIP,
@@ -85,16 +92,19 @@ func main() {
 	binary.BigEndian.PutUint32(tcpHeader[8:12], uint32(*ackn)) // Acknwledgment number
 	tcpHeader[12] = 5 << 4                                     // Data offset
 	tcpHeader[13] = byte(flags)                                // Flags ack:0x10 syn:0x2
-	binary.BigEndian.PutUint16(tcpHeader[14:16], 1024)         // Window size
+	binary.BigEndian.PutUint16(tcpHeader[14:16], 6379)         // Window size
 	binary.BigEndian.PutUint16(tcpHeader[16:18], 0)            // Checksum (initially 0)
 	binary.BigEndian.PutUint16(tcpHeader[18:20], 0)            // Urgent pointer
 
 	// 计算TCP校验和
-	pseudoHeader := append(srcIP, dstIP...)
-	pseudoHeader = append(pseudoHeader, 0)
-	pseudoHeader = append(pseudoHeader, syscall.IPPROTO_TCP)
-	pseudoHeader = append(pseudoHeader, byte(len(tcpHeader)>>8), byte(len(tcpHeader)))
+	pseudoHeader := make([]byte, 12)
+	copy(pseudoHeader[0:4], srcIP)
+	copy(pseudoHeader[4:8], dstIP)
+	pseudoHeader[8] = 0
+	pseudoHeader[9] = syscall.IPPROTO_TCP
+	binary.BigEndian.PutUint16(pseudoHeader[10:12], uint16(len(tcpHeader)+payloadSize))
 	pseudoHeader = append(pseudoHeader, tcpHeader...)
+	pseudoHeader = append(pseudoHeader, payload...)
 	checksum := checksum(pseudoHeader)
 	binary.BigEndian.PutUint16(tcpHeader[16:18], checksum)
 
@@ -104,8 +114,8 @@ func main() {
 		log.Fatalf("IP header marshal failed: %v", err)
 	}
 	packet = append(packet, tcpHeader...)
-	if dataSize > 0 {
-		packet = append(packet, []byte(*psh)...)
+	if payloadSize > 0 {
+		packet = append(packet, payload...)
 	}
 
 	log.Println("packet: ", packet)
@@ -119,7 +129,7 @@ func main() {
 		log.Fatalf("Sendto failed: %v", err)
 	}
 
-	log.Println("TCP ACK packet sent successfully")
+	log.Println("TCP packet sent successfully")
 }
 
 // 计算校验和
