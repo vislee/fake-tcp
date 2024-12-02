@@ -1,11 +1,11 @@
-# feign-tcp
-forging TCP tests tcp protocol features
+# fake-tcp
+fake the TCP package for test TCP features.
 
 # use
 
 ```
-$ feign-tcp -h
-Usage of feign-tcp:
+$ fake-tcp -h
+Usage of fake-tcp:
   -ack
       ack flag
   -ackn uint
