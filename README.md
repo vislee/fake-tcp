@@ -1,5 +1,5 @@
 # fake-tcp
-fake the TCP package for test TCP features.
+fake the TCP packet for test TCP features.
 
 # use
 
